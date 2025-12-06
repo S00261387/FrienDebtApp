@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -15,16 +15,19 @@ import com.example.friendebt.viewmodel.FriendViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val viewModel: FriendViewModel =
+            ViewModelProvider(this)[FriendViewModel::class.java]
+
         setContent {
-            FriendApp()
+            FriendApp(viewModel)
         }
     }
 }
 
 @Composable
-fun FriendApp() {
+fun FriendApp(viewModel: FriendViewModel) {
     val navController = rememberNavController()
-    val friendViewModel: FriendViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -33,7 +36,7 @@ fun FriendApp() {
 
         composable("friendList") {
             FriendListScreen(
-                friends = friendViewModel.friends.collectAsState().value,
+                friends = viewModel.friends.collectAsState().value,
                 onAddFriendClick = { navController.navigate("addFriend") },
                 onFriendClick = { id -> navController.navigate("friendDetails/$id") }
             )
@@ -44,12 +47,10 @@ fun FriendApp() {
 
             FriendDetailsScreen(
                 friendId = friendId,
-                viewModel = friendViewModel,
-                onAddDebtClick = {
-                    navController.navigate("addDebt/$friendId")
-                },
+                viewModel = viewModel,
+                onAddDebtClick = { navController.navigate("addDebt/$friendId") },
                 onDeleteClick = {
-                    friendViewModel.removeFriend(friendId)
+                    viewModel.removeFriend(friendId)
                     navController.popBackStack()
                 },
                 onBackClick = { navController.popBackStack() }
@@ -57,8 +58,7 @@ fun FriendApp() {
         }
 
         composable("addFriend") {
-            // Get current pending image from ViewModel
-            val pendingImage = friendViewModel.pendingImageUri.collectAsState().value
+            val pendingImage = viewModel.pendingImageUri.collectAsState().value
 
             AddFriendScreen(
                 imageUri = pendingImage,
@@ -66,12 +66,12 @@ fun FriendApp() {
                     navController.navigate("camera")
                 },
                 onSaveClick = { name, uri ->
-                    friendViewModel.addFriend(name, uri)
-                    friendViewModel.clearPendingImage()
+                    viewModel.addFriend(name, uri)
+                    viewModel.clearPendingImage()
                     navController.popBackStack()
                 },
                 onBackClick = {
-                    friendViewModel.clearPendingImage()
+                    viewModel.clearPendingImage()
                     navController.popBackStack()
                 }
             )
@@ -80,8 +80,7 @@ fun FriendApp() {
         composable("camera") {
             CameraScreen(
                 onImageCaptured = { uri ->
-                    // Save image in ViewModel
-                    friendViewModel.setPendingImage(uri.toString())
+                    viewModel.setPendingImage(uri.toString())
                 },
                 onClose = {
                     navController.popBackStack()
@@ -95,7 +94,7 @@ fun FriendApp() {
             AddDebtScreen(
                 friendId = friendId,
                 onSaveClick = { desc, amount ->
-                    friendViewModel.addDebt(friendId, desc, amount)
+                    viewModel.addDebt(friendId, desc, amount)
                     navController.popBackStack()
                 },
                 onBackClick = { navController.popBackStack() }

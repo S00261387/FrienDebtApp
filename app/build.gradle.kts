@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
 }
 
 android {
@@ -62,4 +63,12 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.camera:camera-video:1.3.4")
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    //for database
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.6.1")
+
+    // Kotlin Flow support
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
 }

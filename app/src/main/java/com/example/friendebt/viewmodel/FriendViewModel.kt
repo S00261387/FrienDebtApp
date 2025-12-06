@@ -1,22 +1,24 @@
 package com.example.friendebt.viewmodel
 
-import androidx.lifecycle.ViewModel
-import com.example.friendebt.data.Friend
-import com.example.friendebt.data.FriendDebt
+import android.app.Application
+import androidx.lifecycle.*
+import com.example.friendebt.data.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class FriendViewModel : ViewModel() {
+class FriendViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _friends = MutableStateFlow<List<Friend>>(emptyList())
-    val friends: StateFlow<List<Friend>> = _friends
-    private val _debts = MutableStateFlow<List<FriendDebt>>(emptyList())
-    val debts: StateFlow<List<FriendDebt>> = _debts
+    private val db = AppDatabase.getDatabase(application)
+    private val repository = FriendRepository(db.friendDao(), db.debtDao())
 
+    // StateFlows observed by UI
+    val friends = repository.friends
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    // Temporary image captured for the friend being created
     private val _pendingImageUri = MutableStateFlow<String?>(null)
-    val pendingImageUri: StateFlow<String?> = _pendingImageUri
+    val pendingImageUri = _pendingImageUri
 
     fun setPendingImage(uri: String?) {
         _pendingImageUri.value = uri
@@ -26,37 +28,28 @@ class FriendViewModel : ViewModel() {
         _pendingImageUri.value = null
     }
 
+    fun getDebtsForFriend(friendId: Int) =
+        repository.getDebtsForFriend(friendId)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     fun addFriend(name: String, imageUri: String?) {
-        val updatedList = _friends.value.toMutableList()
-        val newId = if (updatedList.isEmpty()) 1 else updatedList.maxOf { it.id } + 1
-        updatedList.add(Friend(id = newId, name = name, imageUri = imageUri))
-        _friends.value = updatedList
+        viewModelScope.launch {
+            repository.addFriend(Friend(name = name, imageUri = imageUri))
+        }
     }
 
     fun removeFriend(id: Int) {
-        _friends.value = _friends.value.filter { it.id != id }
+        val friend = friends.value.firstOrNull { it.id == id } ?: return
+        viewModelScope.launch { repository.removeFriend(friend) }
     }
 
-    fun addDebt(friendId: Int, description: String, amount: Double) {
-        val updatedList = _debts.value.toMutableList()
-        val newId = if (updatedList.isEmpty()) 1 else updatedList.maxOf { it.id } + 1
-
-        updatedList.add(
-            FriendDebt(
-                id = newId,
-                friendId = friendId,
-                description = description,
-                amount = amount
-            )
-        )
-        _debts.value = updatedList
+    fun addDebt(friendId: Int, desc: String, amount: Double) {
+        viewModelScope.launch {
+            repository.addDebt(FriendDebt(friendId = friendId, description = desc, amount = amount))
+        }
     }
 
-    fun removeDebt(id: Int) {
-        _debts.value = _debts.value.filter { it.id != id }
-    }
-
-    fun getDebtsForFriend(friendId: Int): List<FriendDebt> {
-        return _debts.value.filter { it.friendId == friendId }
+    fun removeDebt(debt: FriendDebt) {
+        viewModelScope.launch { repository.removeDebt(debt) }
     }
 }
