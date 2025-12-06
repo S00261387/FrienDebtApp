@@ -63,14 +63,16 @@ fun CameraScreen(
                             val preview = androidx.camera.core.Preview.Builder().build()
                             preview.setSurfaceProvider(previewView.surfaceProvider)
 
+                            cameraProvider.unbindAll() //Release the previous camera session or it displays "no camera" next time
+
                             cameraProvider.bindToLifecycle(
-                                context as androidx.lifecycle.LifecycleOwner,
+                                ctx as androidx.lifecycle.LifecycleOwner,
                                 CameraSelector.DEFAULT_BACK_CAMERA,
                                 preview,
                                 imageCapture
                             )
                         } catch (e: Exception) {
-                            Toast.makeText(context, "⚠ No camera available", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "!!No camera available!!", Toast.LENGTH_SHORT).show()
                             onClose()
                         }
                     }, ContextCompat.getMainExecutor(ctx))

@@ -12,12 +12,12 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AddFriendScreen(
+    imageUri: String?, // image from ViewModel
     onTakePictureClick: () -> Unit,
     onSaveClick: (String, String?) -> Unit,
     onBackClick: () -> Unit
 ) {
     var friendName by rememberSaveable { mutableStateOf("") }
-    var imageUri by rememberSaveable { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
     Scaffold(

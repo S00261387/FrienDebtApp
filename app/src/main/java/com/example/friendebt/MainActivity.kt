@@ -15,7 +15,9 @@ import com.example.friendebt.viewmodel.FriendViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { FriendApp() }
+        setContent {
+            FriendApp()
+        }
     }
 }
 
@@ -24,7 +26,10 @@ fun FriendApp() {
     val navController = rememberNavController()
     val friendViewModel: FriendViewModel = viewModel()
 
-    NavHost(navController, startDestination = "friendList") {
+    NavHost(
+        navController = navController,
+        startDestination = "friendList"
+    ) {
 
         composable("friendList") {
             FriendListScreen(
@@ -49,32 +54,35 @@ fun FriendApp() {
         }
 
         composable("addFriend") {
+            // Get current pending image from ViewModel
+            val pendingImage = friendViewModel.pendingImageUri.collectAsState().value
+
             AddFriendScreen(
+                imageUri = pendingImage,
                 onTakePictureClick = {
-                    if (friendViewModel.hasCamera()) {
-                        navController.navigate("camera")
-                    } else {
-                        navController.currentBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("capturedImage", "placeholder")
-                    }
+                    navController.navigate("camera")
                 },
                 onSaveClick = { name, uri ->
                     friendViewModel.addFriend(name, uri)
+                    friendViewModel.clearPendingImage()
                     navController.popBackStack()
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = {
+                    friendViewModel.clearPendingImage()
+                    navController.popBackStack()
+                }
             )
         }
 
         composable("camera") {
             CameraScreen(
                 onImageCaptured = { uri ->
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("capturedImage", uri.toString())
+                    // Save image in ViewModel
+                    friendViewModel.setPendingImage(uri.toString())
                 },
-                onClose = { navController.popBackStack() }
+                onClose = {
+                    navController.popBackStack()
+                }
             )
         }
     }

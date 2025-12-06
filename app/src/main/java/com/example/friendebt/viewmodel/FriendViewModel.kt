@@ -1,19 +1,26 @@
 package com.example.friendebt.viewmodel
 
-import android.app.Application
-import android.content.pm.PackageManager
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import com.example.friendebt.data.Friend
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import com.example.friendebt.data.Friend
-import com.example.friendebt.data.FriendDebt
 
-class FriendViewModel(application: Application) : AndroidViewModel(application) {
+class FriendViewModel : ViewModel() {
 
     private val _friends = MutableStateFlow<List<Friend>>(emptyList())
     val friends: StateFlow<List<Friend>> = _friends
-    private val _debts = MutableStateFlow<List<FriendDebt>>(emptyList())
-    val debts: StateFlow<List<FriendDebt>> = _debts
+
+    // Temporary image captured for the friend being created
+    private val _pendingImageUri = MutableStateFlow<String?>(null)
+    val pendingImageUri: StateFlow<String?> = _pendingImageUri
+
+    fun setPendingImage(uri: String?) {
+        _pendingImageUri.value = uri
+    }
+
+    fun clearPendingImage() {
+        _pendingImageUri.value = null
+    }
 
     fun addFriend(name: String, imageUri: String?) {
         val updatedList = _friends.value.toMutableList()
@@ -24,37 +31,5 @@ class FriendViewModel(application: Application) : AndroidViewModel(application) 
 
     fun removeFriend(id: Int) {
         _friends.value = _friends.value.filter { it.id != id }
-    }
-
-    fun hasCamera(): Boolean {
-        val pm = getApplication<Application>().packageManager
-        return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
-    }
-
-    fun addDebt(friendId: Int, description: String, amount: Double) {
-        val updatedList = _debts.value.toMutableList()
-        val newId = if (updatedList.isEmpty()) 1 else updatedList.maxOf { it.id } + 1 //unique id for each friend
-
-        updatedList.add(
-            FriendDebt(
-                id = newId,
-                friendId = friendId,
-                description = description,
-                amount = amount
-            )
-        )
-        _debts.value = updatedList
-    }
-
-    fun removeDebt(id: Int) {
-        _debts.value = _debts.value.filter { it.id != id }
-    }
-
-    fun getDebtsForFriend(friendId: Int): List<FriendDebt> {
-        return _debts.value.filter { it.friendId == friendId }
-    }
-
-    fun getTotalForFriend(friendId: Int): Double {
-        return getDebtsForFriend(friendId).sumOf { it.amount }
     }
 }
