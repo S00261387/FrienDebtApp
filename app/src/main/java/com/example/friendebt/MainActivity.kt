@@ -45,6 +45,9 @@ fun FriendApp() {
             FriendDetailsScreen(
                 friendId = friendId,
                 viewModel = friendViewModel,
+                onAddDebtClick = {
+                    navController.navigate("addDebt/$friendId")
+                },
                 onDeleteClick = {
                     friendViewModel.removeFriend(friendId)
                     navController.popBackStack()
@@ -83,6 +86,19 @@ fun FriendApp() {
                 onClose = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+        composable("addDebt/{friendId}") { entry ->
+            val friendId = entry.arguments?.getString("friendId")?.toInt() ?: return@composable
+
+            AddDebtScreen(
+                friendId = friendId,
+                onSaveClick = { desc, amount ->
+                    friendViewModel.addDebt(friendId, desc, amount)
+                    navController.popBackStack()
+                },
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
